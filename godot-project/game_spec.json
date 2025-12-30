@@ -1,0 +1,74 @@
+{
+  "game": {
+    "name": "Brick Breaker Classic",
+    "type": "2D",
+    "genre": "arcade",
+    "description": "Classic brick-breaking arcade game. Control a paddle to bounce a ball and destroy all bricks to win!"
+  },
+  "settings": {
+    "window": {
+      "width": 800,
+      "height": 600
+    },
+    "physics": {
+      "gravity": 0
+    }
+  },
+  "player": {
+    "name": "Paddle",
+    "health": 3,
+    "speed": 500,
+    "abilities": ["move_horizontal"]
+  },
+  "entities": {
+    "ball": {
+      "name": "Ball",
+      "speed": 400,
+      "radius": 8,
+      "behavior": "bounce"
+    },
+    "bricks": {
+      "rows": 5,
+      "cols": 10,
+      "hitPoints": [1, 2, 3],
+      "colors": ["#ff006e", "#ff6b35", "#ffd700", "#00d4ff", "#7b2cbf"]
+    }
+  },
+  "levels": [
+    {
+      "name": "Level 1",
+      "brickRows": 5,
+      "ballSpeed": 400,
+      "paddleWidth": 100
+    },
+    {
+      "name": "Level 2",
+      "brickRows": 5,
+      "ballSpeed": 420,
+      "paddleWidth": 95
+    },
+    {
+      "name": "Level 3",
+      "brickRows": 6,
+      "ballSpeed": 440,
+      "paddleWidth": 90,
+      "multiHitBricks": true
+    }
+  ],
+  "logic": {
+    "winCondition": "destroy_all_bricks",
+    "loseCondition": "lives_zero",
+    "scoring": {
+      "pointsPerBrick": 10,
+      "levelMultiplier": true
+    }
+  },
+  "controls": {
+    "keyboard": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight"
+    },
+    "mouse": true,
+    "touch": true
+  }
+}

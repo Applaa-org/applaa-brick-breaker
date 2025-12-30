@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Brick Breaker Classic</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 4/3;
+            background: linear-gradient(180deg, #0a0a1a 0%, #1a1a3e 100%);
+            border-radius: 15px;
+            box-shadow: 0 0 50px rgba(0, 150, 255, 0.3), inset 0 0 100px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(10, 10, 30, 0.95);
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+
+        .screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .game-title {
+            font-size: clamp(2rem, 6vw, 4rem);
+            font-weight: bold;
+            background: linear-gradient(45deg, #00d4ff, #7b2cbf, #ff006e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
+            margin-bottom: 30px;
+        }
+
+        .high-score-display {
+            background: linear-gradient(135deg, #1a1a3e 0%, #2a2a5e 100%);
+            padding: 15px 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .high-score-display h3 {
+            color: #00d4ff;
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            margin-bottom: 5px;
+        }
+
+        .high-score-display .score-value {
+            color: #ffd700;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: bold;
+        }
+
+        .last-player {
+            color: #aaa;
+            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            margin-top: 5px;
+        }
+
+        .player-input {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .player-input label {
+            color: #fff;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .player-input input {
+            padding: 12px 20px;
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            border: 2px solid #00d4ff;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            text-align: center;
+            width: 200px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .player-input input:focus {
+            border-color: #ff006e;
+            box-shadow: 0 0 15px rgba(255, 0, 110, 0.5);
+        }
+
+        .instructions {
+            color: #aaa;
+            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            margin-bottom: 25px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .instructions strong {
+            color: #00d4ff;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #000;
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .btn-start:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.7);
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #7b2cbf, #5a1d9e);
+            color: #fff;
+            box-shadow: 0 5px 20px rgba(123, 44, 191, 0.5);
+        }
+
+        .btn-restart:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(123, 44, 191, 0.7);
+        }
+
+        .btn-menu {
+            background: linear-gradient(135deg, #444, #333);
+            color: #fff;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-menu:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .btn-close {
+            background: linear-gradient(135deg, #ff006e, #cc0055);
+            color: #fff;
+            box-shadow: 0 5px 20px rgba(255, 0, 110, 0.5);
+        }
+
+        .btn-close:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(255, 0, 110, 0.7);
+        }
+
+        .result-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .result-title.victory {
+            color: #00ff88;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.7);
+        }
+
+        .result-title.defeat {
+            color: #ff4444;
+            text-shadow: 0 0 30px rgba(255, 68, 68, 0.7);
+        }
+
+        .final-score {
+            color: #fff;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            margin-bottom: 10px;
+        }
+
+        .final-score span {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .new-high-score {
+            color: #ffd700;
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            margin-bottom: 20px;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+        .leaderboard {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            max-width: 300px;
+            width: 90%;
+        }
+
+        .leaderboard h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            color: #ccc;
+            font-size: clamp(0.8rem, 1.5vw, 1rem);
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .leaderboard-entry:last-child {
+            border-bottom: none;
+        }
+
+        .leaderboard-entry .rank {
+            color: #ffd700;
+            width: 25px;
+        }
+
+        .leaderboard-entry .name {
+            flex: 1;
+            text-align: left;
+            margin-left: 10px;
+        }
+
+        .leaderboard-entry .score {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        #hud.hidden {
+            display: none;
+        }
+
+        .hud-item {
+            color: #fff;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .hud-item span {
+            color: #00d4ff;
+        }
+
+        .hud-item.lives span {
+            color: #ff4444;
+        }
+
+        .hud-item.high-score span {
+            color: #ffd700;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            #gameContainer {
+                border-radius: 0;
+                max-width: 100%;
+                height: 100vh;
+                aspect-ratio: unset;
+            }
+
+            .btn {
+                padding: 12px 30px;
+            }
+
+            .instructions {
+                padding: 0 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- HUD -->
+        <div id="hud" class="hidden">
+            <div class="hud-item">Score: <span id="hudScore">0</span></div>
+            <div class="hud-item high-score">Best: <span id="hudHighScore">0</span></div>
+            <div class="hud-item lives">Lives: <span id="hudLives">3</span></div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="screen">
+            <h1 class="game-title">🧱 Brick Breaker</h1>
+            <p class="subtitle">Classic Arcade Action</p>
+            
+            <div class="high-score-display">
+                <h3>🏆 High Score</h3>
+                <div class="score-value" id="startHighScore">0</div>
+                <div class="last-player" id="lastPlayerDisplay"></div>
+            </div>
+
+            <div class="leaderboard" id="startLeaderboard">
+                <h4>🎮 Top Scores</h4>
+                <div id="leaderboardEntries"></div>
+            </div>
+
+            <div class="player-input">
+                <label for="playerName">Enter Your Name:</label>
+                <input type="text" id="playerName" placeholder="Player" maxlength="15">
+            </div>
+
+            <div class="instructions">
+                <strong>Controls:</strong><br>
+                ← → Arrow Keys or Mouse to move paddle<br>
+                Touch/Drag on mobile devices<br>
+                Break all bricks to win!
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-start" id="startButton">Start Game</button>
+                <button class="btn btn-close" id="closeStartButton">Close</button>
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victoryScreen" class="screen hidden">
+            <h1 class="result-title victory">🎉 VICTORY!</h1>
+            <p class="final-score">Final Score: <span id="victoryScore">0</span></p>
+            <p class="final-score">Level Completed: <span id="victoryLevel">1</span></p>
+            <div id="victoryNewHighScore" class="new-high-score hidden">🌟 NEW HIGH SCORE! 🌟</div>
+            
+            <div class="high-score-display">
+                <h3>🏆 High Score</h3>
+                <div class="score-value" id="victoryHighScore">0</div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-start" id="nextLevelButton">Next Level</button>
+                <button class="btn btn-restart" id="victoryRestartButton">Restart</button>
+                <button class="btn btn-menu" id="victoryMenuButton">Main Menu</button>
+                <button class="btn btn-close" id="victoryCloseButton">Close</button>
+            </div>
+        </div>
+
+        <!-- Defeat Screen -->
+        <div id="defeatScreen" class="screen hidden">
+            <h1 class="result-title defeat">💀 GAME OVER</h1>
+            <p class="final-score">Final Score: <span id="defeatScore">0</span></p>
+            <p class="final-score">Level Reached: <span id="defeatLevel">1</span></p>
+            <div id="defeatNewHighScore" class="new-high-score hidden">🌟 NEW HIGH SCORE! 🌟</div>
+            
+            <div class="high-score-display">
+                <h3>🏆 High Score</h3>
+                <div class="score-value" id="defeatHighScore">0</div>
+            </div>
+
+            <div class="leaderboard">
+                <h4>🎮 Top Scores</h4>
+                <div id="defeatLeaderboardEntries"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-restart" id="defeatRestartButton">Try Again</button>
+                <button class="btn btn-menu" id="defeatMenuButton">Main Menu</button>
+                <button class="btn btn-close" id="defeatCloseButton">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GAME CONFIGURATION ====================
+        const CONFIG = {
+            PADDLE_WIDTH: 100,
+            PADDLE_HEIGHT: 15,
+            PADDLE_SPEED: 8,
+            BALL_RADIUS: 8,
+            BALL_SPEED: 5,
+            BALL_SPEED_INCREMENT: 0.2,
+            BRICK_ROWS: 5,
+            BRICK_COLS: 10,
+            BRICK_WIDTH: 60,
+            BRICK_HEIGHT: 20,
+            BRICK_PADDING: 5,
+            BRICK_OFFSET_TOP: 60,
+            BRICK_OFFSET_LEFT: 30,
+            INITIAL_LIVES: 3,
+            POINTS_PER_BRICK: 10,
+            GAME_ID: 'brick-breaker-classic'
+        };
+
+        // Brick colors by row
+        const BRICK_COLORS = [
+            '#ff006e', // Pink
+            '#ff6b35', // Orange
+            '#ffd700', // Gold
+            '#00d4ff', // Cyan
+            '#7b2cbf'  // Purple
+        ];
+
+        // ==================== GAME STATE ====================
+        let canvas, ctx;
+        let gameState = 'menu'; // menu, playing, paused, victory, defeat
+        let score = 0;
+        let lives = CONFIG.INITIAL_LIVES;
+        let level = 1;
+        let highScore = 0;
+        let playerName = 'Player';
+        let lastPlayerName = '';
+        let scores = [];
+        let animationId = null;
+
+        // Game objects
+        let paddle = { x: 0, y: 0, width: CONFIG.PADDLE_WIDTH, height: CONFIG.PADDLE_HEIGHT };
+        let ball = { x: 0, y: 0, dx: 0, dy: 0, radius: CONFIG.BALL_RADIUS };
+        let bricks = [];
+
+        // Input state
+        let keys = { left: false, right: false };
+        let mouseX = null;
+        let touchX = null;
+
+        // ==================== INITIALIZATION ====================
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            loadGameData();
+            setupEventListeners();
+            updateAllDisplays();
+            
+            // Start render loop for background effects
+            renderMenu();
+        }
+
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            
+            // Recalculate brick dimensions based on canvas size
+            CONFIG.BRICK_WIDTH = (canvas.width - CONFIG.BRICK_OFFSET_LEFT * 2 - (CONFIG.BRICK_COLS - 1) * CONFIG.BRICK_PADDING) / CONFIG.BRICK_COLS;
+            
+            // Reset paddle position
+            paddle.y = canvas.height - 40;
+            paddle.x = (canvas.width - paddle.width) / 2;
+            
+            // Reset ball if not playing
+            if (gameState !== 'playing') {
+                resetBallPosition();
+            }
+        }
+
+        // ==================== LOCAL STORAGE ====================
+        function loadGameData() {
+            // Initialize displays to 0 first
+            highScore = 0;
+            scores = [];
+            lastPlayerName = '';
+            
+            updateHighScoreDisplays();
+            
+            // Request data from Applaa storage
+            window.parent.postMessage({
+                type: 'applaa-game-load-data',
+                gameId: CONFIG.GAME_ID
+            }, '*');
+        }
+
+        function saveScore(name, scoreValue) {
+            window.parent.postMessage({
+                type: 'applaa-game-save-score',
+                gameId: CONFIG.GAME_ID,
+                playerName: name,
+                score: scoreValue
+            }, '*');
+        }
+
+        function updateGameProgress(progressData) {
+            window.parent.postMessage({
+                type: 'applaa-game-update-progress',
+                gameId: CONFIG.GAME_ID,
+                progress: progressData
+            }, '*');
+        }
+
+        // Listen for storage responses
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'applaa-game-data-loaded') {
+                const data = event.data.data;
+                if (data) {
+                    highScore = data.highScore || 0;
+                    scores = data.scores || [];
+                    lastPlayerName = data.lastPlayerName || '';
+                    
+                    // Pre-fill player name
+                    if (lastPlayerName) {
+                        document.getElementById('playerName').value = lastPlayerName;
+                        playerName = lastPlayerName;
+                    }
+                    
+                    updateAllDisplays();
+                }
+            } else if (event.data.type === 'applaa-game-score-saved') {
+                const data = event.data.data;
+                if (data) {
+                    highScore = data.highScore || highScore;
+                    scores = data.scores || scores;
+                    updateAllDisplays();
+                }
+            }
+        });
+
+        function updateHighScoreDisplays() {
+            // Update all high score displays
+            document.getElementById('startHighScore').textContent = highScore.toLocaleString();
+            document.getElementById('hudHighScore').textContent = highScore.toLocaleString();
+            document.getElementById('victoryHighScore').textContent = highScore.toLocaleString();
+            document.getElementById('defeatHighScore').textContent = highScore.toLocaleString();
+            
+            // Update last player display
+            const lastPlayerDisplay = document.getElementById('lastPlayerDisplay');
+            if (lastPlayerName) {
+                lastPlayerDisplay.textContent = `Last Player: ${lastPlayerName}`;
+                lastPlayerDisplay.style.display = 'block';
+            } else {
+                lastPlayerDisplay.style.display = 'none';
+            }
+        }
+
+        function updateLeaderboard(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (scores.length === 0) {
+                container.innerHTML = '<div style="color: #666; font-size: 0.9rem;">No scores yet!</div>';
+                return;
+            }
+            
+            const topScores = scores.slice(0, 5);
+            topScores.forEach((entry, index) => {
+                const div = document.createElement('div');
+                div.className = 'leaderboard-entry';
+                div.innerHTML = `
+                    <span class="rank">${index + 1}.</span>
+                    <span class="name">${entry.playerName}</span>
+                    <span class="score">${entry.score.toLocaleString()}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateAllDisplays() {
+            updateHighScoreDisplays();
+            updateLeaderboard('leaderboardEntries');
+            updateLeaderboard('defeatLeaderboardEntries');
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        function setupEventListeners() {
+            // Buttons
+            document.getElementById('startButton').addEventListener('click', startGame);
+            document.getElementById('closeStartButton').addEventListener('click', closeGame);
+            
+            document.getElementById('nextLevelButton').addEventListener('click', nextLevel);
+            document.getElementById('victoryRestartButton').addEventListener('click', restartGame);
+            document.getElementById('victoryMenuButton').addEventListener('click', showMenu);
+            document.getElementById('victoryCloseButton').addEventListener('click', closeGame);
+            
+            document.getElementById('defeatRestartButton').addEventListener('click', restartGame);
+            document.getElementById('defeatMenuButton').addEventListener('click', showMenu);
+            document.getElementById('defeatCloseButton').addEventListener('click', closeGame);
+            
+            // Player name input
+            document.getElementById('playerName').addEventListener('input', (e) => {
+                playerName = e.target.value.trim() || 'Player';
+            });
+            
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+                if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+                if (e.key === 'Escape' && gameState === 'playing') pauseGame();
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+                if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+            });
+            
+            // Mouse controls
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            });
+            
+            canvas.addEventListener('mouseleave', () => {
+                mouseX = null;
+            });
+            
+            // Touch controls
+            canvas.addEventListener('touchstart', handleTouch, { passive: false });
+            canvas.addEventListener('touchmove', handleTouch, { passive: false });
+            canvas.addEventListener('touchend', () => { touchX = null; });
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            touchX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        }
+
+        // ==================== GAME FLOW ====================
+        function startGame() {
+            playerName = document.getElementById('playerName').value.trim() || 'Player';
+            
+            hideAllScreens();
+            document.getElementById('hud').classList.remove('hidden');
+            
+            score = 0;
+            lives = CONFIG.INITIAL_LIVES;
+            level = 1;
+            
+            initLevel();
+            gameState = 'playing';
+            
+            updateHUD();
+            gameLoop();
+        }
+
+        function restartGame() {
+            hideAllScreens();
+            document.getElementById('hud').classList.remove('hidden');
+            
+            score = 0;
+            lives = CONFIG.INITIAL_LIVES;
+            level = 1;
+            
+            initLevel();
+            gameState = 'playing';
+            
+            updateHUD();
+            
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoop();
+        }
+
+        function nextLevel() {
+            hideAllScreens();
+            document.getElementById('hud').classList.remove('hidden');
+            
+            level++;
+            lives = Math.min(lives + 1, 5); // Bonus life, max 5
+            
+            initLevel();
+            gameState = 'playing';
+            
+            updateHUD();
+            
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoop();
+        }
+
+        function showMenu() {
+            gameState = 'menu';
+            if (animationId) cancelAnimationFrame(animationId);
+            
+            hideAllScreens();
+            document.getElementById('startScreen').classList.remove('hidden');
+            document.getElementById('hud').classList.add('hidden');
+            
+            updateAllDisplays();
+            renderMenu();
+        }
+
+        function closeGame() {
+            // Save current progress before closing
+            if (score > 0) {
+                saveScore(playerName, score);
+            }
+            
+            // Try to close window or notify parent
+            try {
+                window.parent.postMessage({ type: 'applaa-game-close' }, '*');
+            } catch (e) {
+                window.close();
+            }
+        }
+
+        function pauseGame() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+            } else if (gameState === 'paused') {
+                gameState = 'playing';
+                gameLoop();
+            }
+        }
+
+        function showVictory() {
+            gameState = 'victory';
+            if (animationId) cancelAnimationFrame(animationId);
+            
+            const isNewHighScore = score > highScore;
+            
+            // Save score
+            saveScore(playerName, score);
+            updateGameProgress({ level: level, completed: true });
+            
+            // Update displays
+            document.getElementById('victoryScore').textContent = score.toLocaleString();
+            document.getElementById('victoryLevel').textContent = level;
+            
+            if (isNewHighScore) {
+                document.getElementById('victoryNewHighScore').classList.remove('hidden');
+                highScore = score;
+            } else {
+                document.getElementById('victoryNewHighScore').classList.add('hidden');
+            }
+            
+            document.getElementById('victoryHighScore').textContent = highScore.toLocaleString();
+            
+            hideAllScreens();
+            document.getElementById('victoryScreen').classList.remove('hidden');
+        }
+
+        function showDefeat() {
+            gameState = 'defeat';
+            if (animationId) cancelAnimationFrame(animationId);
+            
+            const isNewHighScore = score > highScore;
+            
+            // Save score
+            saveScore(playerName, score);
+            updateGameProgress({ level: level, completed: false });
+            
+            // Update displays
+            document.getElementById('defeatScore').textContent = score.toLocaleString();
+            document.getElementById('defeatLevel').textContent = level;
+            
+            if (isNewHighScore) {
+                document.getElementById('defeatNewHighScore').classList.remove('hidden');
+                highScore = score;
+            } else {
+                document.getElementById('defeatNewHighScore').classList.add('hidden');
+            }
+            
+            document.getElementById('defeatHighScore').textContent = highScore.toLocaleString();
+            updateLeaderboard('defeatLeaderboardEntries');
+            
+            hideAllScreens();
+            document.getElementById('defeatScreen').classList.remove('hidden');
+        }
+
+        function hideAllScreens() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('victoryScreen').classList.add('hidden');
+            document.getElementById('defeatScreen').classList.add('hidden');
+        }
+
+        // ==================== LEVEL INITIALIZATION ====================
+        function initLevel() {
+            // Reset paddle
+            paddle.width = Math.max(CONFIG.PADDLE_WIDTH - (level - 1) * 5, 60);
+            paddle.x = (canvas.width - paddle.width) / 2;
+            paddle.y = canvas.height - 40;
+            
+            // Reset ball
+            resetBallPosition();
+            
+            // Create bricks
+            createBricks();
+        }
+
+        function resetBallPosition() {
+            ball.x = canvas.width / 2;
+            ball.y = paddle.y - ball.radius - 10;
+            
+            // Random angle between 45 and 135 degrees (upward)
+            const angle = (Math.random() * 90 + 45) * Math.PI / 180;
+            const speed = CONFIG.BALL_SPEED + (level - 1) * CONFIG.BALL_SPEED_INCREMENT;
+            ball.dx = Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1);
+            ball.dy = -Math.abs(Math.sin(angle) * speed);
+        }
+
+        function createBricks() {
+            bricks = [];
+            const rows = CONFIG.BRICK_ROWS + Math.floor((level - 1) / 2);
+            
+            for(let row = 0; row < rows; row++) {
+                for (let col = 0; col < CONFIG.BRICK_COLS; col++) {
+                    const x = CONFIG.BRICK_OFFSET_LEFT + col * (CONFIG.BRICK_WIDTH + CONFIG.BRICK_PADDING);
+                    const y = CONFIG.BRICK_OFFSET_TOP + row * (CONFIG.BRICK_HEIGHT + CONFIG.BRICK_PADDING);
+                    
+                    // Higher levels have stronger bricks
+                    let hits = 1;
+                    if (level >= 3 && row < 2) hits = 2;
+                    if (level >= 5 && row === 0) hits = 3;
+                    
+                    bricks.push({
+                        x: x,
+                        y: y,
+                        width: CONFIG.BRICK_WIDTH,
+                        height: CONFIG.BRICK_HEIGHT,
+                        color: BRICK_COLORS[row % BRICK_COLORS.length],
+                        hits: hits,
+                        maxHits: hits,
+                        active: true
+                    });
+                }
+            }
+        }
+
+        // ==================== UPDATE FUNCTIONS ====================
+        function updateHUD() {
+            document.getElementById('hudScore').textContent = score.toLocaleString();
+            document.getElementById('hudHighScore').textContent = highScore.toLocaleString();
+            document.getElementById('hudLives').textContent = lives;
+        }
+
+        function updatePaddle() {
+            // Keyboard control
+            if (keys.left) {
+                paddle.x -= CONFIG.PADDLE_SPEED;
+            }
+            if (keys.right) {
+                paddle.x += CONFIG.PADDLE_SPEED;
+            }
+            
+            // Mouse control
+            if (mouseX !== null) {
+                const targetX = mouseX - paddle.width / 2;
+                paddle.x += (targetX - paddle.x) * 0.15;
+            }
+            
+            // Touch control
+            if (touchX !== null) {
+                const targetX = touchX - paddle.width / 2;
+                paddle.x += (targetX - paddle.x) * 0.2;
+            }
+            
+            // Clamp paddle position
+            paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, paddle.x));
+        }
+
+        function updateBall() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+            
+            // Wall collisions
+            if (ball.x - ball.radius <= 0 || ball.x + ball.radius >= canvas.width) {
+                ball.dx = -ball.dx;
+                ball.x = Math.max(ball.radius, Math.min(canvas.width - ball.radius, ball.x));
+            }
+            
+            // Top wall
+            if (ball.y - ball.radius <= 0) {
+                ball.dy = -ball.dy;
+                ball.y = ball.radius;
+            }
+            
+            // Paddle collision
+            if (ball.dy > 0 && 
+                ball.y + ball.radius >= paddle.y &&
+                ball.y - ball.radius <= paddle.y + paddle.height &&
+                ball.x >= paddle.x &&
+                ball.x <= paddle.x + paddle.width) {
+                
+                // Calculate bounce angle based on hit position
+                const hitPos = (ball.x - paddle.x) / paddle.width; // 0 to 1
+                const angle = (hitPos - 0.5) * Math.PI * 0.7; // -63 to 63 degrees
+                
+                const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+                ball.dx = Math.sin(angle) * speed;
+                ball.dy = -Math.abs(Math.cos(angle) * speed);
+                
+                // Ensure ball is above paddle
+                ball.y = paddle.y - ball.radius;
+            }
+            
+            // Brick collisions
+            for (let brick of bricks) {
+                if (!brick.active) continue;
+                
+                if (checkBrickCollision(brick)) {
+                    brick.hits--;
+                    
+                    if (brick.hits <= 0) {
+                        brick.active = false;
+                        score += CONFIG.POINTS_PER_BRICK * level;
+                        
+                        // Update high score in real-time
+                        if (score > highScore) {
+                            highScore = score;
+                        }
+                        
+                        updateHUD();
+                    }
+                    
+                    break; // Only one brick collision per frame
+                }
+            }
+            
+            // Ball fell below paddle
+            if (ball.y - ball.radius > canvas.height) {
+                loseLife();
+            }
+            
+            // Check victory
+            if (bricks.every(b => !b.active)) {
+                showVictory();
+            }
+        }
+
+        function checkBrickCollision(brick) {
+            // Find closest point on brick to ball
+            const closestX = Math.max(brick.x, Math.min(ball.x, brick.x + brick.width));
+            const closestY = Math.max(brick.y, Math.min(ball.y, brick.y + brick.height));
+            
+            // Calculate distance
+            const distX = ball.x - closestX;
+            const distY = ball.y - closestY;
+            const distance = Math.sqrt(distX * distX + distY * distY);
+            
+            if (distance < ball.radius) {
+                // Determine collision side
+                const overlapLeft = ball.x + ball.radius - brick.x;
+                const overlapRight = brick.x + brick.width - (ball.x - ball.radius);
+                const overlapTop = ball.y + ball.radius - brick.y;
+                const overlapBottom = brick.y + brick.height - (ball.y - ball.radius);
+                
+                const minOverlapX = Math.min(overlapLeft, overlapRight);
+                const minOverlapY = Math.min(overlapTop, overlapBottom);
+                
+                if (minOverlapX < minOverlapY) {
+                    ball.dx = -ball.dx;
+                } else {
+                    ball.dy = -ball.dy;
+                }
+                
+                return true;
+            }
+            
+            return false;
+        }
+
+        function loseLife() {
+            lives--;
+            updateHUD();
+            
+            if (lives <= 0) {
+                showDefeat();
+            } else {
+                // Reset ball and paddle
+                paddle.x = (canvas.width - paddle.width) / 2;
+                resetBallPosition();
+            }
+        }
+
+        // ==================== RENDER FUNCTIONS ====================
+        function renderMenu() {
+            if (gameState !== 'menu') return;
+            
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw decorative bricks in background
+            const time = Date.now() / 1000;
+            for (let i = 0; i < 20; i++) {
+                const x = (Math.sin(time + i) * 0.5 + 0.5) * canvas.width;
+                const y = (Math.cos(time * 0.7 + i * 0.5) * 0.5 + 0.5) * canvas.height;
+                const alpha = 0.1 + Math.sin(time + i) * 0.05;
+                
+                ctx.fillStyle = BRICK_COLORS[i % BRICK_COLORS.length] + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+                ctx.fillRect(x - 30, y - 10, 60, 20);
+            }
+            
+            requestAnimationFrame(renderMenu);
+        }
+
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw stars background
+            drawStars();
+            
+            // Draw bricks
+            for (let brick of bricks) {
+                if (!brick.active) continue;
+                
+                // Calculate color based on remaining hits
+                const alpha = 0.5 + (brick.hits / brick.maxHits) * 0.5;
+                
+                // Brick body
+                ctx.fillStyle = brick.color;
+                ctx.globalAlpha = alpha;
+                
+                // Rounded rectangle
+                const radius = 4;
+                ctx.beginPath();
+                ctx.moveTo(brick.x + radius, brick.y);
+                ctx.lineTo(brick.x + brick.width - radius, brick.y);
+                ctx.quadraticCurveTo(brick.x + brick.width, brick.y, brick.x + brick.width, brick.y + radius);
+                ctx.lineTo(brick.x + brick.width, brick.y + brick.height - radius);
+                ctx.quadraticCurveTo(brick.x + brick.width, brick.y + brick.height, brick.x + brick.width - radius, brick.y + brick.height);
+                ctx.lineTo(brick.x + radius, brick.y + brick.height);
+                ctx.quadraticCurveTo(brick.x, brick.y + brick.height, brick.x, brick.y + brick.height - radius);
+                ctx.lineTo(brick.x, brick.y + radius);
+                ctx.quadraticCurveTo(brick.x, brick.y, brick.x + radius, brick.y);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Highlight
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(brick.x + 2, brick.y + 2, brick.width - 4, 4);
+                
+                // Show hit indicator for multi-hit bricks
+                if (brick.maxHits > 1) {
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(brick.hits.toString(), brick.x + brick.width / 2, brick.y + brick.height / 2);
+                }
+                
+                ctx.globalAlpha = 1;
+            }
+            
+            // Draw paddle
+            const paddleGradient = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.height);
+            paddleGradient.addColorStop(0, '#00d4ff');
+            paddleGradient.addColorStop(0.5, '#0099cc');
+            paddleGradient.addColorStop(1, '#006699');
+            
+            ctx.fillStyle = paddleGradient;
+            ctx.beginPath();
+            ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 5);
+            ctx.fill();
+            
+            // Paddle highlight
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillRect(paddle.x + 5, paddle.y + 2, paddle.width - 10, 3);
+            
+            // Draw ball
+            const ballGradient = ctx.createRadialGradient(
+                ball.x - ball.radius * 0.3, ball.y - ball.radius * 0.3, 0,
+                ball.x, ball.y, ball.radius
+            );
+            ballGradient.addColorStop(0, '#ffffff');
+            ballGradient.addColorStop(0.3, '#ffff88');
+            ballGradient.addColorStop(1, '#ff8800');
+            
+            ctx.fillStyle = ballGradient;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Ball glow
+            ctx.shadowColor = '#ff8800';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        function drawStars() {
+            // Simple starfield effect
+            const time = Date.now() / 5000;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            
+            for (let i = 0; i < 50; i++) {
+                const x = ((i * 73 + time * 20) % canvas.width);
+                const y = ((i * 37) % canvas.height);
+                const size = (i % 3) + 1;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // ==================== GAME LOOP ====================
+        function gameLoop() {
+            if (gameState !== 'playing') return;
+            
+            updatePaddle();
+            updateBall();
+            render();
+            
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // ==================== START ====================
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
